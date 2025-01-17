@@ -106,7 +106,7 @@ export const document = table(
     createdAt: timestamp('createdAt').notNull(),
     title: text('title').notNull(),
     content: text('content'),
-    kind: varchar('text', { enum: ['text', 'code'] })
+    kind: varchar('text', { enum: ['text', 'code', 'image'] })
       .notNull()
       .default('text'),
     userId: uuid('userId')
