@@ -21,12 +21,14 @@ export const {
     Credentials({
       credentials: {},
       async authorize({ email, password }: any) {
-        const users = await getUser(email);
+        const users:any = await getUser(email);
+        console.log(email, password ,users);
         if (users.length === 0) return null;
         // biome-ignore lint: Forbidden non-null assertion.
-        const passwordsMatch = await compare(password, users[0].password!);
+        const passwordsMatch = await compare(password, users.password!);
         if (!passwordsMatch) return null;
-        return users[0] as any;
+        console.log(users);
+        return users as any;
       },
     }),
   ],

@@ -28,7 +28,7 @@ export function AuthForm({
           id="email"
           name="email"
           className="bg-muted text-md md:text-sm"
-          type="email"
+          type="text"
           placeholder="user@acme.com"
           autoComplete="email"
           required

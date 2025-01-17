@@ -2,8 +2,8 @@ import 'server-only';
 
 import { genSaltSync, hashSync } from 'bcrypt-ts';
 import { and, asc, desc, eq, gt, gte } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/mysql2';
+import mysql from 'mysql2/promise';
 
 import {
   user,
@@ -18,19 +18,25 @@ import {
 } from './schema';
 import { BlockKind } from '@/components/block';
 
-// Optionally, if not using email/pass login, you can
-// use the Drizzle adapter for Auth.js / NextAuth
-// https://authjs.dev/reference/adapter/drizzle
+// MySQL connection
+const connectionParams = {
+  host: 'sql12.freemysqlhosting.net',
+  port: 3306,
+  user: 'sql12757960',
+  password: 'fWtqruY2vt',
+  database: 'sql12757960',
+};
 
-// biome-ignore lint: Forbidden non-null assertion.
-const client = postgres(process.env.POSTGRES_URL!);
-const db = drizzle(client);
+const connectionUrl = `mysql://${connectionParams.user}:${connectionParams.password}@${connectionParams.host}:${connectionParams.port}/${connectionParams.database}`;
+const pool = mysql.createPool(connectionUrl);
+const db = drizzle(pool);
 
-export async function getUser(email: string): Promise<Array<User>> {
+export async function getUser(email: string): Promise<User | undefined> {
   try {
-    return await db.select().from(user).where(eq(user.email, email));
+    const result = await db.select().from(user).where(eq(user.email, email)).limit(1);
+    return result[0];
   } catch (error) {
-    console.error('Failed to get user from database');
+    console.error('Failed to get user from database',error);
     throw error;
   }
 }
@@ -57,14 +63,19 @@ export async function saveChat({
   title: string;
 }) {
   try {
-    return await db.insert(chat).values({
-      id,
-      createdAt: new Date(),
-      userId,
-      title,
-    });
+    const [createdEntry] = await db
+      .insert(chat)
+      .values({
+        id,
+        createdAt: new Date(),
+        userId,
+        title,
+      }).$returningId()
+       ; // Return the 'id' column of the inserted entry
+
+    return createdEntry; // Return the created entry's ID
   } catch (error) {
-    console.error('Failed to save chat in database');
+    console.error('Failed to save chat in database', error);
     throw error;
   }
 }
@@ -106,6 +117,7 @@ export async function getChatById({ id }: { id: string }) {
 
 export async function saveMessages({ messages }: { messages: Array<Message> }) {
   try {
+    console.log(messages);
     return await db.insert(message).values(messages);
   } catch (error) {
     console.error('Failed to save messages in database', error);

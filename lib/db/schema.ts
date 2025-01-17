@@ -11,30 +11,64 @@ import {
   boolean,
 } from 'drizzle-orm/pg-core';
 
-export const user = pgTable('User', {
-  id: uuid('id').primaryKey().notNull().defaultRandom(),
-  email: varchar('email', { length: 64 }).notNull(),
-  password: varchar('password', { length: 64 }),
-});
+import { mysqlTable as table, AnyMySqlColumn } from "drizzle-orm/mysql-core";
+import * as t from "drizzle-orm/mysql-core";
+// import { AnyMySqlColumn } from "drizzle-orm/mysql-core";
+export const user = table(
+  "User",
+  {
+    id: t.int().primaryKey().autoincrement(),
+    firstName: t.varchar("first_name", { length: 256 }),
+    lastName: t.varchar("last_name", { length: 256 }),
+    password: t.varchar("password", { length: 256 }),
+    email: t.varchar({ length: 256 }).notNull(),
+    role: t.mysqlEnum(["guest", "user", "admin"]).default("guest"),
+  },
+  (table) => {
+    return {
+      emailIndex: t.uniqueIndex("email_idx").on(table.email),
+    };
+  }
+);
 
 export type User = InferSelectModel<typeof user>;
 
-export const chat = pgTable('Chat', {
-  id: uuid('id').primaryKey().notNull().defaultRandom(),
-  createdAt: timestamp('createdAt').notNull(),
-  title: text('title').notNull(),
-  userId: uuid('userId')
-    .notNull()
-    .references(() => user.id),
-  visibility: varchar('visibility', { enum: ['public', 'private'] })
-    .notNull()
-    .default('private'),
-});
+export const chat = table(
+  "Chat",
+  {
+    id: t.int().primaryKey().autoincrement(),
+    createdAt: timestamp('createdAt').notNull(),
+    title: text('title').notNull(),
+    userId: uuid('userId')
+      .notNull()
+    ,
+    visibility: varchar('visibility', { enum: ['public', 'private'] })
+      .notNull()
+      .default('private'),
+  },
+  (table) => {
+    return {
+      idx: t.uniqueIndex("idx").on(table.id),
+    };
+  }
+
+  //   'Chat', {
+  //   id: t.int().primaryKey().autoincrement(),
+  //   createdAt: timestamp('createdAt').notNull(),
+  //   title: text('title').notNull(),
+  //   userId: uuid('userId')
+  //     .notNull()
+  //     ,
+  //   visibility: varchar('visibility', { enum: ['public', 'private'] })
+  //     .notNull()
+  //     .default('private'),
+  // }
+);
 
 export type Chat = InferSelectModel<typeof chat>;
 
-export const message = pgTable('Message', {
-  id: uuid('id').primaryKey().notNull().defaultRandom(),
+export const message = table('Message', {
+  id: t.int().primaryKey().autoincrement(),
   chatId: uuid('chatId')
     .notNull()
     .references(() => chat.id),
@@ -45,7 +79,7 @@ export const message = pgTable('Message', {
 
 export type Message = InferSelectModel<typeof message>;
 
-export const vote = pgTable(
+export const vote = table(
   'Vote',
   {
     chatId: uuid('chatId')
@@ -65,7 +99,7 @@ export const vote = pgTable(
 
 export type Vote = InferSelectModel<typeof vote>;
 
-export const document = pgTable(
+export const document = table(
   'Document',
   {
     id: uuid('id').notNull().defaultRandom(),
@@ -88,7 +122,7 @@ export const document = pgTable(
 
 export type Document = InferSelectModel<typeof document>;
 
-export const suggestion = pgTable(
+export const suggestion = table(
   'Suggestion',
   {
     id: uuid('id').notNull().defaultRandom(),

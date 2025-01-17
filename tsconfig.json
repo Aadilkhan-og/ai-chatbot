@@ -28,6 +28,6 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "next.config.js"
-  ],
+, "lib/db/migrate.js"  ],
   "exclude": ["node_modules"]
 }

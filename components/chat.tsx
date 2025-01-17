@@ -1,19 +1,18 @@
-'use client';
+"use client";
 
-import type { Attachment, Message } from 'ai';
-import { useChat } from 'ai/react';
-import { useState } from 'react';
-import useSWR, { useSWRConfig } from 'swr';
+import type { Attachment, Message } from "ai";
+import { useChat, useCompletion } from "ai/react";
+import { useState } from "react";
+import useSWR, { useSWRConfig } from "swr";
 
-import { ChatHeader } from '@/components/chat-header';
-import type { Vote } from '@/lib/db/schema';
-import { fetcher } from '@/lib/utils';
-
-import { Block } from './block';
-import { MultimodalInput } from './multimodal-input';
-import { Messages } from './messages';
-import { VisibilityType } from './visibility-selector';
-import { useBlockSelector } from '@/hooks/use-block';
+import { ChatHeader } from "@/components/chat-header";
+import type { Vote } from "@/lib/db/schema";
+import { fetcher } from "@/lib/utils";
+import { Block } from "./block";
+import { MultimodalInput } from "./multimodal-input";
+import { Messages } from "./messages";
+import { VisibilityType } from "./visibility-selector";
+import { useBlockSelector } from "@/hooks/use-block";
 
 export function Chat({
   id,
@@ -29,7 +28,12 @@ export function Chat({
   isReadonly: boolean;
 }) {
   const { mutate } = useSWRConfig();
-
+  // const { input, completion,isLoading, handleInputChange, handleSubmit } = useCompletion({
+  //   api: "http://127.0.0.1:8000/agent/ask",
+  //   headers: {
+  //     "Content-Type": "application/json",
+  //   },
+  // });
   const {
     messages,
     setMessages,
@@ -41,23 +45,36 @@ export function Chat({
     stop,
     reload,
   } = useChat({
+    api: "http://127.0.0.1:8000/agent/ask",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: {
+      id,
+      modelId: selectedModelId,
+    },
     id,
-    body: { id, modelId: selectedModelId },
     initialMessages,
     experimental_throttle: 100,
     onFinish: () => {
-      mutate('/api/history');
+      mutate("/api/history");
     },
+    onError: (error) => {
+      console.log("Chat error:", error);
+    },
+    onResponse: (response) => {
+      console.log("Chat response:", response);
+    },
+    streamProtocol: "text",
   });
 
   const { data: votes } = useSWR<Array<Vote>>(
     `/api/vote?chatId=${id}`,
-    fetcher,
+    fetcher
   );
 
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
   const isBlockVisible = useBlockSelector((state) => state.isVisible);
-
   return (
     <>
       <div className="flex flex-col min-w-0 h-dvh bg-background">
@@ -116,4 +133,5 @@ export function Chat({
       />
     </>
   );
+
 }

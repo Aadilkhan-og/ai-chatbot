@@ -2,12 +2,12 @@
 
 import { z } from 'zod';
 
-import { createUser, getUser } from '@/lib/db/queries';
 
 import { signIn } from './auth';
+import { createUser, getUser } from '@/lib/db/queries';
 
 const authFormSchema = z.object({
-  email: z.string().email(),
+  email: z.string(),
   password: z.string().min(6),
 });
 
@@ -19,11 +19,13 @@ export const login = async (
   _: LoginActionState,
   formData: FormData,
 ): Promise<LoginActionState> => {
+  console.log('validatedData');
   try {
     const validatedData = authFormSchema.parse({
       email: formData.get('email'),
       password: formData.get('password'),
     });
+
 
     await signIn('credentials', {
       email: validatedData.email,
@@ -36,7 +38,7 @@ export const login = async (
     if (error instanceof z.ZodError) {
       return { status: 'invalid_data' };
     }
-
+    console.log(error);
     return { status: 'failed' };
   }
 };
@@ -61,12 +63,15 @@ export const register = async (
       password: formData.get('password'),
     });
 
-    const [user] = await getUser(validatedData.email);
+    const user = await getUser(validatedData.email);
 
     if (user) {
       return { status: 'user_exists' } as RegisterActionState;
     }
+    console.log(user,validatedData);
     await createUser(validatedData.email, validatedData.password);
+    console.log(user,validatedData);
+
     await signIn('credentials', {
       email: validatedData.email,
       password: validatedData.password,

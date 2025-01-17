@@ -12,19 +12,19 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const { id } = params;
   const chat = await getChatById({ id });
-
   if (!chat) {
     notFound();
   }
-
+  
   const session = await auth();
+  console.log(chat,session.user);
 
   if (chat.visibility === 'private') {
     if (!session || !session.user) {
       return notFound();
     }
 
-    if (session.user.id !== chat.userId) {
+    if (session.user.id != chat.userId) {
       return notFound();
     }
   }
@@ -32,7 +32,8 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   const messagesFromDb = await getMessagesByChatId({
     id,
   });
-
+   const convertMessages :any =  convertToUIMessages(messagesFromDb)
+   console.log(convertMessages);
   const cookieStore = await cookies();
   const modelIdFromCookie = cookieStore.get('model-id')?.value;
   const selectedModelId =
@@ -43,10 +44,10 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     <>
       <Chat
         id={chat.id}
-        initialMessages={convertToUIMessages(messagesFromDb)}
+        initialMessages={convertMessages}
         selectedModelId={selectedModelId}
         selectedVisibilityType={chat.visibility}
-        isReadonly={session?.user?.id !== chat.userId}
+        isReadonly={session?.user?.id != chat.userId}
       />
       <DataStreamHandler id={id} />
     </>
